@@ -37,6 +37,7 @@
       "react-app/jest"
     ]
   },
+  "homepage": "https://tq-samples.github.io/icebreaker",
   "browserslist": {
     "production": [
       ">0.2%",
