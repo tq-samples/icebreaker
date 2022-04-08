@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Tab from "@mui/material/Tab";
 import TabContext from "@mui/lab/TabContext";
@@ -15,9 +15,6 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemButton from "@mui/material/ListItemButton";
 import Checkbox from "@mui/material/Checkbox";
 import shuffle from "lodash.shuffle";
-import useSound from "use-sound";
-import RollSound from "./roll.mp3";
-import StopSound from "./stop.mp3";
 import useWindowSize from "react-use/lib/useWindowSize";
 import Confetti from "react-confetti";
 
@@ -46,10 +43,11 @@ export default function CenteredTabsPage() {
 
   const [checked, setChecked] = React.useState([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-  const [playRollSound, { sound }] = useSound(RollSound);
-  const [playStopSound] = useSound(StopSound);
   const { width, height } = useWindowSize();
   const [confetti, setConfetti] = useState(false);
+
+  const [isStarted, setIsStarted] = useState(false);
+  const [clock, setClock] = useState(Math.random);
 
   //functions
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
@@ -95,7 +93,11 @@ export default function CenteredTabsPage() {
     setChecked(newChecked);
   };
 
-  const handleMatch = async () => {
+  const handleStop = () => {
+    setConfetti(true);
+    setIsStarted(false);
+  };
+  const handleGo = async () => {
     if (personList.length === 0) {
       alert("参加者がいません");
       return;
@@ -104,15 +106,24 @@ export default function CenteredTabsPage() {
       return;
     }
     setConfetti(false);
-    playRollSound();
-    for (let i = 0; i < 20; i++) {
-      setShuffledUser(shuffle(personList)[0]);
-      setShuffledTitle(talkTitles[shuffle(checked)[0]]);
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
-    playStopSound();
-    setConfetti(true);
+    setIsStarted(true);
   };
+
+  useEffect(() => {
+    if (isStarted) {
+      const intervalId = setInterval(() => {
+        setClock(Math.random());
+      }, 100);
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [isStarted]);
+
+  useEffect(() => {
+    setShuffledUser(shuffle(personList)[0]);
+    setShuffledTitle(talkTitles[shuffle(checked)[0]]);
+  }, [clock]);
 
   return (
     <Box sx={{ width: "100%", bgcolor: "background.paper" }}>
@@ -220,9 +231,15 @@ export default function CenteredTabsPage() {
         <TabPanel value="3">
           <Grid container spacing={2} direction="column" alignItems="center">
             <Grid item xs={12}>
-              <Button variant="contained" onClick={handleMatch}>
-                GO!!
-              </Button>
+              {isStarted ? (
+                <Button variant="contained" onClick={handleStop}>
+                  Stop
+                </Button>
+              ) : (
+                <Button variant="contained" onClick={handleGo}>
+                  Go
+                </Button>
+              )}
             </Grid>
             <Box mt={10} />
             <Grid item xs={12}>
